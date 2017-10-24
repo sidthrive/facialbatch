@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Button
+        android:id="@+id/btCamera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="48dp"
+        android:text="Camera"
+        android:onClick="openCamera"
+        />
+
+    <Button
+        android:id="@+id/btLoadFile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Load"
+        android:layout_marginRight="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="13dp"
+        android:layout_below="@+id/layoutDetails"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <LinearLayout
+        android:id="@+id/layoutDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/border"
+        android:layout_marginTop="10dp"
+        android:orientation="vertical"
+        android:padding="15dp"
+        android:layout_below="@+id/btCamera"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mode"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rbgMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+            <RadioButton
+                android:id="@+id/rbAdd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Records"/>
+
+            <RadioButton
+                android:id="@+id/rbCheck"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Recognize"/>
+        </RadioGroup>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Type"
+            android:textStyle="bold"
+            />
+
+        <RadioGroup
+            android:id="@+id/rbgType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+            <RadioButton
+                android:id="@+id/rbDir"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Directory"/>
+
+            <RadioButton
+                android:id="@+id/rbFile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="File"/>
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/tvLoc"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="10dp"
+            android:onClick="setLocation"
+            />
+
+        <!--<EditText-->
+        <!--android:id="@+id/editText"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_alignLeft="@+id/textView4"-->
+        <!--android:layout_alignStart="@+id/textView4"-->
+        <!--android:layout_alignTop="@+id/button2"-->
+        <!--android:layout_marginLeft="20dp"-->
+        <!--android:layout_marginStart="20dp"-->
+        <!--android:layout_marginTop="10dp"-->
+        <!--android:ems="10"-->
+        <!--android:inputType="textPersonName"-->
+        <!--android:text=""-->
+        <!--android:onClick="setLocation"-->
+        <!--/>-->
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Algoritma"
+            android:textStyle="bold"
+            android:layout_marginTop="25dp"/>
+
+        <RadioGroup
+            android:id="@+id/rbgAlg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+            <RadioButton
+                android:id="@+id/rb_eigen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Eigenfaces" />
+
+            <RadioButton
+                android:id="@+id/rb_fisher"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Fisherfaces" />
+
+            <RadioButton
+                android:id="@+id/rb_lbph"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="LBPH" />
+
+        </RadioGroup>
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="   Images   "
+        android:layout_marginLeft="15dp"
+        android:background="#ffffff"
+        android:textSize="17sp"
+        android:layout_below="@+id/btCamera"
+        android:id="@+id/textView4" />
+
+    <ScrollView
+        android:id="@+id/sv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/btLoadFile"
+        android:layout_centerHorizontal="true"
+        >
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center_horizontal"
+            >
+            <ImageView
+                android:id="@+id/imgDisp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="10dp"
+                />
+
+            <ImageView
+                android:id="@+id/imgDispFace"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/transparent"
+                android:layout_below="@id/imgDisp"
+                android:layout_marginTop="10dp"
+                />
+            <TextView
+                android:id="@+id/tvFace"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_below="@id/imgDispFace"
+                android:layout_centerHorizontal="true"
+                />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_below="@+id/sv"
+        android:layout_margin="10dp"
+        >
+
+        <ProgressBar
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:id="@+id/progbar_h"
+            android:max="100"
+            />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tv_outof"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentLeft="true"
+                android:text="@string/slash_sign"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/tv_percentage"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                android:text="@string/percent_sign"
+                />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

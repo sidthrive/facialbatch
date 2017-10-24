@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Luxand Face Recognition</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="slash_sign">/</string>
+    <string name="percent_sign">%</string>
+    <string name="no_file_path">No File Path</string>
+
+</resources>

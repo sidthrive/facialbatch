@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--Indigo 500-->
+    <color name="primary_500">#065E52</color>
+    <!--Indigo 700-->
+    <color name="primary_700">#303F9F</color>
+    <!--Pink 500-->
+    <color name="accent_500">#FFFFFF</color>
+    <!--Pink 700-->
+    <color name="accent_700">#C2185B</color>
+    <color name="black_trans80">#33000000</color>
+
+    <color name="fab_color_pressed">#007787</color>
+    <color name="fab_color_shadow">#44000000</color>
+    <color name="style_color_accent">#065E52</color>
+
+    <color name="btn_default_light_normal">#00000000</color>
+    <color name="btn_default_light_pressed">#40ffffff</color>
+    <color name="btn_send_normal">#02c754</color>
+    <color name="btn_send_pressed">#006633</color>
+    <color name="btn_default_shadow">#99000000</color>
+    <color name="btn_context_menu_normal">#ffffff</color>
+    <color name="btn_context_menu_pressed">#40000000</color>
+    <color name="btn_context_menu_text_red">#ffff0000</color>
+
+    <color name="text_like_counter">#2b5a83</color>
+
+    <color name="bg_comments">#ffffff</color>
+    <color name="primary">#EF5350</color>
+    <color name="overlay_light">#F8F8F8</color>
+    <color name="transparent">#00000000</color>
+</resources>
