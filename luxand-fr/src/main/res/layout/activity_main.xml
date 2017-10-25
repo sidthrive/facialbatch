@@ -120,42 +120,23 @@
             android:textStyle="bold"
             android:layout_marginTop="25dp"/>
 
-        <RadioGroup
-            android:id="@+id/rbgAlg"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" >
-
-            <RadioButton
-                android:id="@+id/rb_eigen"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Eigenfaces" />
-
-            <RadioButton
-                android:id="@+id/rb_fisher"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Fisherfaces" />
-
-            <RadioButton
-                android:id="@+id/rb_lbph"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="LBPH" />
-
-        </RadioGroup>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/faceToMatch"
+            />
 
     </LinearLayout>
 
     <TextView
+        android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="   Images   "
-        android:layout_marginLeft="15dp"
-        android:background="#ffffff"
-        android:textSize="17sp"
         android:layout_below="@+id/btCamera"
-        android:id="@+id/textView4" />
+        android:layout_marginLeft="15dp"
+        android:background="@color/transparent"
+        android:text="   Images   "
+        android:textSize="17sp" />
 
     <ScrollView
         android:id="@+id/sv"
@@ -238,5 +219,16 @@
         </RelativeLayout>
 
     </LinearLayout>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView4"
+        android:layout_alignStart="@+id/textView4"
+        android:layout_alignTop="@+id/btLoadFile"
+        android:text="Choose Photo"
+        android:onClick="choosePhoto"
+        />
 
 </RelativeLayout>

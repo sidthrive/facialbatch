@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
@@ -36,13 +37,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import lib.folderpicker.FolderPicker;
 
-import static com.luxand.fr.activities.CameraActivity.SERIAL_KEY;
-
+import com.luxand.FSDK.*;
 
 public class MainActivity extends Activity {
 
@@ -54,17 +55,13 @@ public class MainActivity extends Activity {
     TextView tvLoc;
     TextView tvFace, tv_percentage;
     ImageView imgDisp, imgFace;
-    RadioButton rbDir, rbFile, rbEigen, rbFisher, rbLbph;
-    RadioGroup rbgType, rbgAlg;
+    RadioButton rbDir, rbFile;
+    RadioGroup rbgType;
 
-    private String afilename;
     private String folderLocation;
     private int chooseType;
 
-    private Context mContext;
-    private Bitmap mutableBitmap, mutableBitmapFace;
     private String filename;
-    private String mPredictResult;
     ProgressBar pbar;
 
     private ProcessImageBackground mTask;
@@ -76,7 +73,7 @@ public class MainActivity extends Activity {
     private ProcessImageAndDrawResults mDraw;
 
     protected boolean processing;
-    private int MAX_FACES = 2;
+    private int MAX_FACES = 5;
     private FSDK.HTracker mTracker;
 
     Config config = new Config();
@@ -89,30 +86,17 @@ public class MainActivity extends Activity {
 
         mTask = new ProcessImageBackground();
 
-//        dirLoc = (EditText) findViewById(R.id.editText);
         btCamera = (Button) findViewById(R.id.btCamera);
         btLoadFile = (Button) findViewById(R.id.btLoadFile);
-
+        rbgType = (RadioGroup) findViewById(R.id.rbgType);
         rbDir = (RadioButton) findViewById(R.id.rbDir);
         rbFile = (RadioButton) findViewById(R.id.rbFile);
-        rbEigen = (RadioButton) findViewById(R.id.rb_eigen);
-        rbFisher = (RadioButton) findViewById(R.id.rb_fisher);
-        rbLbph = (RadioButton) findViewById(R.id.rb_lbph);
-
-        rbgType = (RadioGroup) findViewById(R.id.rbgType);
-        rbgAlg = (RadioGroup) findViewById(R.id.rbgAlg);
-
         tvLoc = (TextView) findViewById(R.id.tvLoc);
-
         pbar = (ProgressBar) findViewById(R.id.progbar_h);
-
         imgDisp = (ImageView) findViewById(R.id.imgDisp);
         imgFace = (ImageView) findViewById(R.id.imgDispFace);
         tvFace = (TextView) findViewById(R.id.tvFace);
         tv_percentage = (TextView) findViewById(R.id.tv_percentage);
-//        imgDisp = (ImageView) findViewById(R.id.draw_view);
-//        dirLoc.setInputType(InputType.TYPE_NULL);
-//        dirLoc.setKeyListener(null);
         tvLoc.setText(R.string.no_file_path);
 
         int res = 0;
@@ -160,12 +144,6 @@ public class MainActivity extends Activity {
         super.onPause();
 
         if (isFinishing()) {
-            //
-            // Exit by user pressing KEY_BACK.
-            //
-//            Settings.getInstance().sync();
-//            LocalNameList.getInstance().store();
-            //FaceDetector.getInstance().destroy();
 //            WhooLog.close();
         } else {
             // Exit for other reasons.
@@ -294,15 +272,12 @@ public class MainActivity extends Activity {
     private void processDir(String m_chosenDir) {
         if (new File(m_chosenDir).exists() && !MainActivity.m_chosenDir.isEmpty()) {
 
-            // Execution main process
-//                    task.execute();
             if (mTask == null) {
                 mTask = new ProcessImageBackground();
             }
             mTask.execute();
-//                    mTask = (ProcessImageBackground) new ProcessImageBackground().execute();
-//                    btn_start.setClickable(false);
             Toast.makeText(MainActivity.this, "Mode : Batch Mode " + m_chosenDir, Toast.LENGTH_SHORT).show();
+
         } else {
             Toast.makeText(MainActivity.this, "File folder not found " + m_chosenDir, Toast.LENGTH_SHORT).show();
 
@@ -329,39 +304,36 @@ public class MainActivity extends Activity {
             intent.putExtra("location", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath());
             intent.putExtra("pickFiles", true);
             startActivityForResult(intent, FILE_PICKER_CODE);
-//
         }
 
     }
 
-//    public void SaveImage(Mat image) {
-//        Boolean bool = null;
-//        String newfilename = "faceDetection.png";
-//
-//        File path = new File(Environment.getExternalStorageDirectory() + "/Images/");
-//        path.mkdirs();
-//
-//        File file = new File(path, "image.png");
-//        afilename = file.toString();
-//
-//        bool = Highgui.imwrite(afilename, image);
-//
-//        System.out.println(String.format("Writing %s", newfilename));
-//
-//        if (bool)
-//            Log.e(TAG, "loadFile: " + "SUCCESS writing image to external storage");
-//        else
-//            Log.e(TAG, "Fail writing image to external storage");
-//    }
+    public void choosePhoto(View view) {
+        String photoPath = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + "/matching/10000006.jpg"));
+
+        setFaceToMatch(photoPath);
+    }
+
+    public void setFaceToMatch(String picturePath) {
+        if (picturePath == null) {
+            Log.w("setFaceToMatch", "picturePath==null");
+            return;
+        }
+        ImageView imageView = (ImageView) findViewById(R.id.faceToMatch);
+        imageView.setImageURI(Uri.parse(picturePath));
+        this.mDraw.setFaceToMatch(picturePath);
+    }
+
 
     private class ProcessImageBackground extends AsyncTask<String, Integer, List<RowItem>> {
 
-        public FSDK.HTracker mTracker;
+        public HTracker mTracker;
 
-        protected FSDK.FSDK_Features features;
-        protected FSDK.TFacePosition faceCoords;
+        protected FSDK_Features features;
+        protected TFacePosition faceCoords;
+        protected HImage picture;
+
         protected String picturePath;
-        protected FSDK.HImage picture;
         protected int result;
         private long mTouchedID;
 
@@ -371,9 +343,12 @@ public class MainActivity extends Activity {
         int noOfPaths;
         private File[] list;
 
+        final FaceRectangle[] mFacePositions = new FaceRectangle[MAX_FACES];
+        final long[] mIDs = new long[MAX_FACES];
+
         @Override
-        protected List<RowItem> doInBackground(String... urls) {
-            noOfPaths = urls.length;
+        protected List<RowItem> doInBackground(String... params) {
+            noOfPaths = params.length;
             rowItems = new ArrayList<RowItem>();
 
             String strDir = MainActivity.m_chosenDir;
@@ -401,93 +376,62 @@ public class MainActivity extends Activity {
                     // Test scalefactor, neigbour
                     for (File f : list) {
 
-                        // Convert to Gray
-//                        BitmapFactory.Options options = new BitmapFactory.Options();
-//                        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-//                        Bitmap bitmap = BitmapFactory.decodeFile(f.getPath(), options);
-//                        int faceSize = 128;
-
-                        faceCoords = new FSDK.TFacePosition();
-                        picture = new FSDK.HImage();
-                        result = FSDK.LoadImageFromFile(picture, f.getAbsolutePath());
-
-                        // Load image to FaceSDK
-                        FSDK.HImage Image = new FSDK.HImage();
-                        FSDK.FSDK_IMAGEMODE imagemode = new FSDK.FSDK_IMAGEMODE();
-                        imagemode.mode = FSDK.FSDK_IMAGEMODE.FSDK_IMAGE_COLOR_24BIT;
-//                        FSDK.LoadImageFromBuffer(Image, mRGBData, mImageWidth, mImageHeight, mImageWidth*3, imagemode);
-                        FSDK.MirrorImage(Image, false);
-                        FSDK.HImage RotatedImage = new FSDK.HImage();
-                        FSDK.CreateEmptyImage(RotatedImage);
-
-                        final long[] mIDs = new long[MAX_FACES];
-                        final FaceRectangle[] mFacePositions = new FaceRectangle[MAX_FACES];
-
-                        long IDs[] = new long[MAX_FACES];
-                        FaceRectangle rects[] = new FaceRectangle[MAX_FACES];
-
-                        long face_count[] = new long[1];
-
-                        FSDK.FeedFrame(mTracker, 0, RotatedImage, face_count, IDs);
-                        FSDK.FreeImage(RotatedImage);
-
-                        for (int i=0; i < MAX_FACES; ++i) {
-                            mFacePositions[i] = new FaceRectangle();
-                            mFacePositions[i].x1 = 0;
-                            mFacePositions[i].y1 = 0;
-                            mFacePositions[i].x2 = 0;
-                            mFacePositions[i].y2 = 0;
-                            mIDs[i] = IDs[i];
-                        }
-
-                        for (int i=0; i < MAX_FACES; ++i) {
-                            if (rects[i] != null) {
-                                mTouchedID = IDs[i];
-                            }
-                        }
-
-                        for (int i = 0; i < (int)face_count[0]; ++i) {
-                            FSDK.FSDK_Features Eyes = new FSDK.FSDK_Features();
-                            FSDK.GetTrackerEyes(mTracker, 0, mIDs[i], Eyes);
-
-//                            GetFaceFrame(Eyes, mFacePositions[i]);
-//                            mFacePositions[i].x1 *= ratio;
-//                            mFacePositions[i].y1 *= ratio;
-//                            mFacePositions[i].x2 *= ratio;
-//                            mFacePositions[i].y2 *= ratio;
-                        }
-
-
-                        if (result == FSDK.FSDKE_OK){
+                        picturePath = f.getPath();
+                        faceCoords = new TFacePosition();
+                        faceCoords.w = 0;
+                        picture = new HImage();
+                        result = FSDK.LoadImageFromFile(picture, picturePath);
+                        if (result == FSDK.FSDKE_OK) {
                             result = FSDK.DetectFace(picture, faceCoords);
-                            features = new FSDK.FSDK_Features();
-                            if (result == FSDK.FSDKE_OK){
+                            features = new FSDK_Features();
+                            if (result == FSDK.FSDKE_OK) {
                                 result = FSDK.DetectFacialFeaturesInRegion(picture, faceCoords, features);
 
-                                //
-                                FSDK.LockID(mTracker, mTouchedID);
-                                FSDK.SetName(mTracker, mTouchedID, f.getName());
-                                FSDK.UnlockID(mTracker, mTouchedID);
+                                FaceRectangle rects[] = new FaceRectangle[MAX_FACES];
+                                long IDs[] = new long[MAX_FACES];
+
+                                for (int i=0; i < MAX_FACES; ++i) {
+                                    mFacePositions[i] = new FaceRectangle();
+                                    mFacePositions[i].x1 = 0;
+                                    mFacePositions[i].y1 = 0;
+                                    mFacePositions[i].x2 = 0;
+                                    mFacePositions[i].y2 = 0;
+                                    mIDs[i] = IDs[i];
+                                }
+
+                                for (int i=0; i<MAX_FACES; ++i) {
+                                    Log.e(TAG, "onTouchEvent: i = "+i );
+                                    rects[i] = new FaceRectangle();
+                                    rects[i].x1 = mFacePositions[i].x1;
+                                    rects[i].y1 = mFacePositions[i].y1;
+                                    rects[i].x2 = mFacePositions[i].x2;
+                                    rects[i].y2 = mFacePositions[i].y2;
+                                    IDs[i] = mIDs[i];
+                                }
+
+                                for (int i=0; i < MAX_FACES; ++i) {
+
+                                    if (rects[i] != null) {
+                                        mTouchedID = IDs[i];
+
+                                        Log.e(TAG, "doInBackground: "+ mTracker +" mTouchedID: "+mTouchedID );
+                                        FSDK.SetName(mTracker, mTouchedID, f.getName());
+
+
+//                                        mTouchedIndex = i;
+                                    } else {
+                                        Log.e(TAG, "doInBackground: face null " );
+                                    }
+                                }
 
                             }
                         }
-
-                        processing = false;
-
-
+                        processing = false; //long-running code is complete, now user may push the button
                         myProgress++;
 
 //                        publishProgress(myProgress * 100 / (7*4*(100-1)));
                         publishProgress(myProgress * 100 / list.length);
 
-////                    rowItems.add(new RowItem(map));
-//
-//                        try {
-//                            Thread.sleep(1000);
-//                        } catch (InterruptedException e) {
-//                            e.printStackTrace();
-//                        }
-//
 
                     }
 

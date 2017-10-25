@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
@@ -15,6 +16,8 @@ import com.luxand.fr.util.FaceRectangle;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static android.content.ContentValues.TAG;
 
 /**
  * Created by wildan on 10/24/17.
@@ -41,6 +44,7 @@ public class ProcessImageAndDrawResults extends View {
     public int mImageHeight;
     boolean first_frame_saved;
     public boolean rotated;
+    private FSDK.FSDK_FaceTemplate faceToMatch;
 
     public ProcessImageAndDrawResults(Context context) {
         super(context);
@@ -186,6 +190,7 @@ public class ProcessImageAndDrawResults extends View {
                 FaceRectangle rects[] = new FaceRectangle[MAX_FACES];
                 long IDs[] = new long[MAX_FACES];
                 for (int i=0; i<MAX_FACES; ++i) {
+                    Log.e(TAG, "onTouchEvent: i = "+i );
                     rects[i] = new FaceRectangle();
                     rects[i].x1 = mFacePositions[i].x1;
                     rects[i].y1 = mFacePositions[i].y1;
@@ -209,6 +214,7 @@ public class ProcessImageAndDrawResults extends View {
                                 .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                                     @Override public void onClick(DialogInterface dialogInterface, int j) {
                                         FSDK.LockID(mTracker, mTouchedID);
+                                        Log.e(TAG, "onClick: mTouchedID "+ mTouchedID );
                                         FSDK.SetName(mTracker, mTouchedID, input.getText().toString());
                                         FSDK.UnlockID(mTracker, mTouchedID);
                                         mTouchedIndex = -1;
@@ -282,6 +288,17 @@ public class ProcessImageAndDrawResults extends View {
     }
 
 
+    public void setFaceToMatch(String picturePath) {
+        Log.d("picturePath", picturePath);
+        FSDK.HImage image = new FSDK.HImage();
+        int result = FSDK.LoadImageFromFile(image, picturePath);
+        Log.d("LoadImageFromFile", String.format("%d", result));
+        FSDK.FSDK_FaceTemplate faceTemplate = new FSDK.FSDK_FaceTemplate();
+        result = FSDK.GetFaceTemplate(image, faceTemplate);
+        Log.d("GetFaceTemplate", String.format("%d", result));
+        this.faceToMatch = (result == 0) ? faceTemplate : null;
+        FSDK.FreeImage(image);
+    }
 
 } // end of ProcessImageAndDrawResults class
 
