@@ -11,10 +11,8 @@ public class FSDK
 		System.loadLibrary("stlport_shared");
 		System.loadLibrary("fsdk");
 	}
-	
-	
+
 	// Error codes
-	
 	public static final int FSDKE_OK = 0;
 	public static final int FSDKE_FAILED = -1;
 	public static final int FSDKE_NOT_ACTIVATED = -2;
@@ -43,15 +41,11 @@ public class FSDK
 	public static final int FSDKE_INVALID_TEMPLATE = -25;
 	public static final int FSDKE_UNSUPPORTED_TEMPLATE_VERSION = -26;
 
-	
-	
 	// Facial feature count
-	
 	public static final int FSDK_FACIAL_FEATURE_COUNT = 66;
 	
 	
 	// Types
-	
 	public static class FSDK_IMAGEMODE {
 		public static final int FSDK_IMAGE_GRAYSCALE_8BIT = 0;
 		public static final int FSDK_IMAGE_COLOR_24BIT = 1;

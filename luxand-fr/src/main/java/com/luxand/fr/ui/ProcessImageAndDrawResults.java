@@ -42,37 +42,10 @@ public class ProcessImageAndDrawResults extends View {
     boolean first_frame_saved;
     public boolean rotated;
 
-    int GetFaceFrame(FSDK.FSDK_Features Features, FaceRectangle fr)
-    {
-        if (Features == null || fr == null)
-            return FSDK.FSDKE_INVALID_ARGUMENT;
-
-        float u1 = Features.features[0].x;
-        float v1 = Features.features[0].y;
-        float u2 = Features.features[1].x;
-        float v2 = Features.features[1].y;
-        float xc = (u1 + u2) / 2;
-        float yc = (v1 + v2) / 2;
-        int w = (int)Math.pow((u2 - u1) * (u2 - u1) + (v2 - v1) * (v2 - v1), 0.5);
-
-        fr.x1 = (int)(xc - w * 1.6 * 0.9);
-        fr.y1 = (int)(yc - w * 1.1 * 0.9);
-        fr.x2 = (int)(xc + w * 1.6 * 0.9);
-        fr.y2 = (int)(yc + w * 2.1 * 0.9);
-        if (fr.x2 - fr.x1 > fr.y2 - fr.y1) {
-            fr.x2 = fr.x1 + fr.y2 - fr.y1;
-        } else {
-            fr.y2 = fr.y1 + fr.x2 - fr.x1;
-        }
-        return 0;
-    }
-
-
     public ProcessImageAndDrawResults(Context context) {
         super(context);
 
         mTouchedIndex = -1;
-
         mStopping = 0;
         mStopped = 0;
         rotated = false;
@@ -158,7 +131,7 @@ public class ProcessImageAndDrawResults extends View {
 
         faceLock.lock();
 
-        for (int i=0; i<MAX_FACES; ++i) {
+        for (int i=0; i < MAX_FACES; ++i) {
             mFacePositions[i] = new FaceRectangle();
             mFacePositions[i].x1 = 0;
             mFacePositions[i].y1 = 0;
@@ -182,7 +155,7 @@ public class ProcessImageAndDrawResults extends View {
         faceLock.unlock();
 
         // Mark and name faces
-        for (int i=0; i<face_count[0]; ++i) {
+        for (int i=0; i < face_count[0]; ++i) {
             canvas.drawRect(mFacePositions[i].x1, mFacePositions[i].y1, mFacePositions[i].x2, mFacePositions[i].y2, mPaintBlueTransparent);
 
             boolean named = false;
@@ -201,7 +174,6 @@ public class ProcessImageAndDrawResults extends View {
 
         super.onDraw(canvas);
     } // end onDraw method
-
 
     @Override
     public boolean onTouchEvent(MotionEvent event) { //NOTE: the method can be implemented in Preview class
@@ -223,7 +195,7 @@ public class ProcessImageAndDrawResults extends View {
                 }
                 faceLock.unlock();
 
-                for (int i=0; i<MAX_FACES; ++i) {
+                for (int i=0; i < MAX_FACES; ++i) {
                     if (rects[i] != null && rects[i].x1 <= x && x <= rects[i].x2 && rects[i].y1 <= y && y <= rects[i].y2 + 30) {
                         mTouchedID = IDs[i];
 
@@ -284,6 +256,33 @@ public class ProcessImageAndDrawResults extends View {
             }
         }
     }
+
+    int GetFaceFrame(FSDK.FSDK_Features Features, FaceRectangle fr) {
+        if (Features == null || fr == null)
+            return FSDK.FSDKE_INVALID_ARGUMENT;
+
+        float u1 = Features.features[0].x;
+        float v1 = Features.features[0].y;
+        float u2 = Features.features[1].x;
+        float v2 = Features.features[1].y;
+        float xc = (u1 + u2) / 2;
+        float yc = (v1 + v2) / 2;
+        int w = (int)Math.pow((u2 - u1) * (u2 - u1) + (v2 - v1) * (v2 - v1), 0.5);
+
+        fr.x1 = (int)(xc - w * 1.6 * 0.9);
+        fr.y1 = (int)(yc - w * 1.1 * 0.9);
+        fr.x2 = (int)(xc + w * 1.6 * 0.9);
+        fr.y2 = (int)(yc + w * 2.1 * 0.9);
+        if (fr.x2 - fr.x1 > fr.y2 - fr.y1) {
+            fr.x2 = fr.x1 + fr.y2 - fr.y1;
+        } else {
+            fr.y2 = fr.y1 + fr.x2 - fr.x1;
+        }
+        return 0;
+    }
+
+
+
 } // end of ProcessImageAndDrawResults class
 
 

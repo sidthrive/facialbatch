@@ -1,78 +1,41 @@
-package com.luxand.fr;
+package com.luxand.fr.activities;
 
 import com.luxand.FSDK;
 import com.luxand.FSDK.HTracker;
 import com.luxand.fr.ui.ProcessImageAndDrawResults;
-import com.luxand.fr.util.FaceRectangle;
 import com.luxand.fr.util.Preview;
 
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Paint.Align;
-import android.hardware.Camera;
-import android.hardware.Camera.PreviewCallback;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.ViewGroup.LayoutParams;
-import android.widget.EditText;
 
 import org.sid.fr.R;
 
 public class CameraActivity extends Activity implements OnClickListener {
 
-	private static final String SERIAL_KEY = "";
+	public static final String SERIAL_KEY = "";
 	private Preview mPreview;
 	private ProcessImageAndDrawResults mDraw;
 	private final String database = "Memory50.dat";
 	private final String help_text = "Luxand Face Recognition\n\nJust tap any detected face and name it. The app will recognize this face further. For best results, hold the device at arm's length. You may slowly rotate the head for the app to memorize you at multiple views. The app can memorize several persons. If a face is not recognized, tap and name it again.\n\nThe SDK is available for mobile developers: www.luxand.com/facesdk";
 		
-	public void showErrorAndClose(String error, int code) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(error + ": " + code)
-			.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-				@Override
-				public void onClick(DialogInterface dialogInterface, int i) {
-					android.os.Process.killProcess(android.os.Process.myPid());
-				}
-			})
-			.show();		
-	}
-	
-	public void showMessage(String message) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(message)
-			.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-				@Override
-				public void onClick(DialogInterface dialogInterface, int i) {
-				}
-			})
-			.setCancelable(false) // cancel with button only
-			.show();		
-	}
-	
-	
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		int res = FSDK.ActivateLibrary(SERIAL_KEY);        if (res != FSDK.FSDKE_OK) {
+		int res = FSDK.ActivateLibrary(SERIAL_KEY);
+
+		if (res != FSDK.FSDKE_OK) {
 			showErrorAndClose("FaceSDK activation failed", res);
 		} else {
 	        FSDK.Initialize();
@@ -103,7 +66,6 @@ public class CameraActivity extends Activity implements OnClickListener {
 	        			
 	        setContentView(mPreview); //creates CameraActivity contents
 			addContentView(mDraw, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-			
 
 			// Menu
 			LayoutInflater inflater = (LayoutInflater)this.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
@@ -151,7 +113,31 @@ public class CameraActivity extends Activity implements OnClickListener {
 		super.onResume();
 		resumeProcessingFrames();
 	}
-	
+
+	public void showErrorAndClose(String error, int code) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(error + ": " + code)
+				.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialogInterface, int i) {
+						android.os.Process.killProcess(android.os.Process.myPid());
+					}
+				})
+				.show();
+	}
+
+	public void showMessage(String message) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setMessage(message)
+				.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialogInterface, int i) {
+					}
+				})
+				.setCancelable(false) // cancel with button only
+				.show();
+	}
+
 	private void pauseProcessingFrames() {
 		mDraw.mStopping = 1;
 		

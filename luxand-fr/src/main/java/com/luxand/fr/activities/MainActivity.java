@@ -1,4 +1,4 @@
-package com.luxand.fr;
+package com.luxand.fr.activities;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -7,9 +7,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
@@ -25,6 +22,11 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.luxand.FSDK;
+import com.luxand.fr.ui.ProcessImageAndDrawResults;
+import com.luxand.fr.util.Dialog;
+import com.luxand.fr.util.FaceRectangle;
+
 import org.sid.fr.R;
 
 import java.io.BufferedWriter;
@@ -37,6 +39,8 @@ import java.util.Date;
 import java.util.List;
 
 import lib.folderpicker.FolderPicker;
+
+import static com.luxand.fr.activities.CameraActivity.SERIAL_KEY;
 
 
 public class MainActivity extends Activity {
@@ -51,21 +55,10 @@ public class MainActivity extends Activity {
     ImageView imgDisp, imgFace;
     RadioButton rbDir, rbFile, rbEigen, rbFisher, rbLbph;
     RadioGroup rbgType, rbgAlg;
+
     private String afilename;
     private String folderLocation;
-
     private int chooseType;
-
-//    Mat descriptors2, descriptors1;
-//    Mat image;
-//    Mat mDetectedFace;
-//    MatOfKeyPoint keypoints1, keypoints2;
-//    FeatureDetector detector;
-//    DescriptorExtractor descriptor;
-//    DescriptorMatcher matcher;
-//    DrawView mTargetView;
-//    private WFaceRecognizer wfr;
-//    private FaceRecognizer mReadable;
 
     private Context mContext;
     private Bitmap mutableBitmap, mutableBitmapFace;
@@ -73,23 +66,26 @@ public class MainActivity extends Activity {
     private String mPredictResult;
     ProgressBar pbar;
 
-    private BackgroundTask mTask;
+    private ProcessImageBackground mTask;
     private static String m_chosenDir = "";
     LogReport logReport = new LogReport();
+    private Dialog mDialog;
 
-//        folderLocation = "/storage/emulated/0/Download/Donal1.jpg";
-//        folderLocation = "/storage/emulated/0/Download/lena.png"; // 512px
-//        String folderLocation = "/storage/emulated/0/Download/image2.jpg"; // 1024px
-//        folderLocation = "/storage/emulated/0/Download/scarlett_johansson.png"; // 1920px
-//        folderLocation = "/storage/emulated/0/Download/10006868.jpg"; // 1920px
-//        folderLocation = "/storage/emulated/0/Download/nail.png"; // 1920px
-//        folderLocation = "/storage/emulated/0/Download/balsamic.png"; // 1920px
+    private final String database = "Memory50.dat";
+    private ProcessImageAndDrawResults mDraw;
+
+    protected boolean processing;
+    private int MAX_FACES = 2;
+    private FSDK.HTracker mTracker;
+
 
     protected void onCreate(Bundle savedInstanceBundle) {
+        processing = true; //prevent user from pushing the button while initializing
+
         super.onCreate(savedInstanceBundle);
         setContentView(R.layout.activity_main);
 
-        mTask = new BackgroundTask();
+        mTask = new ProcessImageBackground();
 
 //        dirLoc = (EditText) findViewById(R.id.editText);
         btCamera = (Button) findViewById(R.id.btCamera);
@@ -115,10 +111,41 @@ public class MainActivity extends Activity {
 //        imgDisp = (ImageView) findViewById(R.id.draw_view);
 //        dirLoc.setInputType(InputType.TYPE_NULL);
 //        dirLoc.setKeyListener(null);
-
         tvLoc.setText(R.string.no_file_path);
 
-        initListener();
+        int res = FSDK.ActivateLibrary(SERIAL_KEY);
+
+        mDialog = new Dialog();
+
+        if (res != FSDK.FSDKE_OK) {
+            mDialog.showErrorAndClose(this, "FaceSDK activation failed", res);
+        } else {
+
+            initListener();
+
+            FSDK.Initialize();
+
+            String templatePath = this.getApplicationInfo().dataDir + "/" + database;
+
+            mDraw = new ProcessImageAndDrawResults(this);
+            mTracker = new FSDK.HTracker();
+
+            if (FSDK.FSDKE_OK != FSDK.LoadTrackerMemoryFromFile(mDraw.mTracker, templatePath)) {
+
+                res = FSDK.CreateTracker(mTracker);
+                if (FSDK.FSDKE_OK != res) {
+                    mDialog.showErrorAndClose(this, "Error creating tracker", res);
+                }
+            }
+
+            int errpos[] = new int[1];
+            FSDK.SetTrackerMultipleParameters(mDraw.mTracker, "ContinuousVideoFeed=true;RecognitionPrecision=0;Threshold=0.997;Threshold2=0.9995;ThresholdFeed=0.97;MemoryLimit=1000;HandleArbitraryRotations=false;DetermineFaceRotationAngle=false;InternalResizeWidth=70;FaceDetectionThreshold=5;", errpos);
+            if (errpos[0] != 0) {
+                mDialog.showErrorAndClose(this, "Error setting tracker parameters, position", errpos[0]);
+            }
+
+        }
+
 
     }
 
@@ -142,6 +169,10 @@ public class MainActivity extends Activity {
 
     protected void onResume() {
         super.onResume();
+        Log.e(TAG, "onResume: " );
+        String templatePath = this.getApplicationInfo().dataDir + "/" + database;
+        FSDK.SaveTrackerMemoryToFile(mTracker, templatePath);
+
     }
 
     protected void onDestroy() {
@@ -241,7 +272,7 @@ public class MainActivity extends Activity {
                 if (folderLocation == null) {
 
                     // Directory
-                    m_chosenDir = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + "/origin"));
+                    m_chosenDir = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM + "/matching"));
 
                 } else {
                     m_chosenDir = folderLocation;
@@ -259,10 +290,10 @@ public class MainActivity extends Activity {
             // Execution main process
 //                    task.execute();
             if (mTask == null) {
-                mTask = new BackgroundTask();
+                mTask = new ProcessImageBackground();
             }
             mTask.execute();
-//                    mTask = (BackgroundTask) new BackgroundTask().execute();
+//                    mTask = (ProcessImageBackground) new ProcessImageBackground().execute();
 //                    btn_start.setClickable(false);
             Toast.makeText(MainActivity.this, "Mode : Batch Mode " + m_chosenDir, Toast.LENGTH_SHORT).show();
         } else {
@@ -316,7 +347,16 @@ public class MainActivity extends Activity {
 //            Log.e(TAG, "Fail writing image to external storage");
 //    }
 
-    private class BackgroundTask extends AsyncTask<String, Integer, List<RowItem>> {
+    private class ProcessImageBackground extends AsyncTask<String, Integer, List<RowItem>> {
+
+        public FSDK.HTracker mTracker;
+
+        protected FSDK.FSDK_Features features;
+        protected FSDK.TFacePosition faceCoords;
+        protected String picturePath;
+        protected FSDK.HImage picture;
+        protected int result;
+        private long mTouchedID;
 
         int myProgress;
         private Activity context;
@@ -333,8 +373,9 @@ public class MainActivity extends Activity {
             String mCascadeFileName = "haarcascade_frontalface_alt.xml";
             File cascadeDir = getApplicationContext().getDir("cascade", Context.MODE_PRIVATE);
             File mCascadeFile = new File(cascadeDir, mCascadeFileName);
+            mTracker = new FSDK.HTracker();
 
-            // Check if Input is Directory or Not
+//            Check if Input is Directory or Not
 
             if (new File(strDir).isDirectory()) {
 
@@ -354,11 +395,77 @@ public class MainActivity extends Activity {
                     for (File f : list) {
 
                         // Convert to Gray
-                        BitmapFactory.Options options = new BitmapFactory.Options();
-                        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                        Bitmap bitmap = BitmapFactory.decodeFile(f.getPath(), options);
+//                        BitmapFactory.Options options = new BitmapFactory.Options();
+//                        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+//                        Bitmap bitmap = BitmapFactory.decodeFile(f.getPath(), options);
+//                        int faceSize = 128;
 
-                        int faceSize = 128;
+                        faceCoords = new FSDK.TFacePosition();
+                        picture = new FSDK.HImage();
+                        result = FSDK.LoadImageFromFile(picture, f.getAbsolutePath());
+
+                        // Load image to FaceSDK
+                        FSDK.HImage Image = new FSDK.HImage();
+                        FSDK.FSDK_IMAGEMODE imagemode = new FSDK.FSDK_IMAGEMODE();
+                        imagemode.mode = FSDK.FSDK_IMAGEMODE.FSDK_IMAGE_COLOR_24BIT;
+//                        FSDK.LoadImageFromBuffer(Image, mRGBData, mImageWidth, mImageHeight, mImageWidth*3, imagemode);
+                        FSDK.MirrorImage(Image, false);
+                        FSDK.HImage RotatedImage = new FSDK.HImage();
+                        FSDK.CreateEmptyImage(RotatedImage);
+
+                        final long[] mIDs = new long[MAX_FACES];
+                        final FaceRectangle[] mFacePositions = new FaceRectangle[MAX_FACES];
+
+                        long IDs[] = new long[MAX_FACES];
+                        FaceRectangle rects[] = new FaceRectangle[MAX_FACES];
+
+                        long face_count[] = new long[1];
+
+                        FSDK.FeedFrame(mTracker, 0, RotatedImage, face_count, IDs);
+                        FSDK.FreeImage(RotatedImage);
+
+                        for (int i=0; i < MAX_FACES; ++i) {
+                            mFacePositions[i] = new FaceRectangle();
+                            mFacePositions[i].x1 = 0;
+                            mFacePositions[i].y1 = 0;
+                            mFacePositions[i].x2 = 0;
+                            mFacePositions[i].y2 = 0;
+                            mIDs[i] = IDs[i];
+                        }
+
+                        for (int i=0; i < MAX_FACES; ++i) {
+                            if (rects[i] != null) {
+                                mTouchedID = IDs[i];
+                            }
+                        }
+
+                        for (int i = 0; i < (int)face_count[0]; ++i) {
+                            FSDK.FSDK_Features Eyes = new FSDK.FSDK_Features();
+                            FSDK.GetTrackerEyes(mTracker, 0, mIDs[i], Eyes);
+
+//                            GetFaceFrame(Eyes, mFacePositions[i]);
+//                            mFacePositions[i].x1 *= ratio;
+//                            mFacePositions[i].y1 *= ratio;
+//                            mFacePositions[i].x2 *= ratio;
+//                            mFacePositions[i].y2 *= ratio;
+                        }
+
+
+                        if (result == FSDK.FSDKE_OK){
+                            result = FSDK.DetectFace(picture, faceCoords);
+                            features = new FSDK.FSDK_Features();
+                            if (result == FSDK.FSDKE_OK){
+                                result = FSDK.DetectFacialFeaturesInRegion(picture, faceCoords, features);
+
+                                //
+                                FSDK.LockID(mTracker, mTouchedID);
+                                FSDK.SetName(mTracker, mTouchedID, f.getName());
+                                FSDK.UnlockID(mTracker, mTouchedID);
+
+                            }
+                        }
+
+                        processing = false;
 
 
                         myProgress++;
@@ -389,7 +496,6 @@ public class MainActivity extends Activity {
             return rowItems;
         }
 
-
         @Override
         protected void onPreExecute() {
 //            Toast.makeText(MainActivity.this, "onPreExecute", Toast.LENGTH_LONG).show();
@@ -401,6 +507,10 @@ public class MainActivity extends Activity {
 //            Toast.makeText(MainActivity.this, "onPostExecute", Toast.LENGTH_LONG).show();
             btLoadFile.setClickable(true);
             mTask = null;
+
+            String templatePath = MainActivity.this.getApplicationInfo().dataDir + "/" + database;
+            FSDK.SaveTrackerMemoryToFile(mTracker, templatePath);
+
         }
 
 //        @Override
@@ -419,7 +529,7 @@ public class MainActivity extends Activity {
             super.onProgressUpdate(values);
             pbar.setProgress(values[0]);
             tv_percentage.setText(String.format("%s %%", values[0].toString()));
-//            Log.e(TAG, "onProgressUpdate: values " + values[0]);
+            Log.e(TAG, "onProgressUpdate: values " + values[0]);
         }
 
     }
