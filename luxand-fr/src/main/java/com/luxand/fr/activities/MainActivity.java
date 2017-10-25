@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import com.luxand.FSDK;
 import com.luxand.fr.ui.ProcessImageAndDrawResults;
+import com.luxand.fr.util.Config;
 import com.luxand.fr.util.Dialog;
 import com.luxand.fr.util.FaceRectangle;
 
@@ -78,6 +79,7 @@ public class MainActivity extends Activity {
     private int MAX_FACES = 2;
     private FSDK.HTracker mTracker;
 
+    Config config = new Config();
 
     protected void onCreate(Bundle savedInstanceBundle) {
         processing = true; //prevent user from pushing the button while initializing
@@ -113,7 +115,12 @@ public class MainActivity extends Activity {
 //        dirLoc.setKeyListener(null);
         tvLoc.setText(R.string.no_file_path);
 
-        int res = FSDK.ActivateLibrary(SERIAL_KEY);
+        int res = 0;
+        try {
+            res = FSDK.ActivateLibrary(config.getSerialKey("serialkey", getApplicationContext()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         mDialog = new Dialog();
 
@@ -145,8 +152,6 @@ public class MainActivity extends Activity {
             }
 
         }
-
-
     }
 
     protected void onPause() {
@@ -171,7 +176,9 @@ public class MainActivity extends Activity {
         super.onResume();
         Log.e(TAG, "onResume: " );
         String templatePath = this.getApplicationInfo().dataDir + "/" + database;
+
         FSDK.SaveTrackerMemoryToFile(mTracker, templatePath);
+        Log.e(TAG, "onResume: "+ templatePath );
 
     }
 

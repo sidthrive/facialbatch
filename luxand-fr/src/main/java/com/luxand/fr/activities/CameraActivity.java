@@ -3,6 +3,7 @@ package com.luxand.fr.activities;
 import com.luxand.FSDK;
 import com.luxand.FSDK.HTracker;
 import com.luxand.fr.ui.ProcessImageAndDrawResults;
+import com.luxand.fr.util.Config;
 import com.luxand.fr.util.Preview;
 
 import android.app.Activity;
@@ -20,6 +21,11 @@ import android.view.ViewGroup.LayoutParams;
 
 import org.sid.fr.R;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Properties;
+
 public class CameraActivity extends Activity implements OnClickListener {
 
 	public static final String SERIAL_KEY = "";
@@ -27,23 +33,32 @@ public class CameraActivity extends Activity implements OnClickListener {
 	private ProcessImageAndDrawResults mDraw;
 	private final String database = "Memory50.dat";
 	private final String help_text = "Luxand Face Recognition\n\nJust tap any detected face and name it. The app will recognize this face further. For best results, hold the device at arm's length. You may slowly rotate the head for the app to memorize you at multiple views. The app can memorize several persons. If a face is not recognized, tap and name it again.\n\nThe SDK is available for mobile developers: www.luxand.com/facesdk";
-		
-	/** Called when the activity is first created. */
+	private String serialKey;
+	Config config = new Config();
+
+	/**
+	 * Called when the activity is first created.
+	 */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		int res = FSDK.ActivateLibrary(SERIAL_KEY);
+		int res = 0;
+		try {
+			res = FSDK.ActivateLibrary(config.getSerialKey("serialkey", getApplicationContext()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		if (res != FSDK.FSDKE_OK) {
 			showErrorAndClose("FaceSDK activation failed", res);
 		} else {
-	        FSDK.Initialize();
-	        
+			FSDK.Initialize();
+
 			// Hide the window title (it is done in manifest too)
 			getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 			requestWindowFeature(Window.FEATURE_NO_TITLE);
-			
+
 			// Lock orientation
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
@@ -54,27 +69,27 @@ public class CameraActivity extends Activity implements OnClickListener {
 			String templatePath = this.getApplicationInfo().dataDir + "/" + database;
 			if (FSDK.FSDKE_OK != FSDK.LoadTrackerMemoryFromFile(mDraw.mTracker, templatePath)) {
 				res = FSDK.CreateTracker(mDraw.mTracker);
-		        if (FSDK.FSDKE_OK != res) {
-		        	showErrorAndClose("Error creating tracker", res);
-		        }
+				if (FSDK.FSDKE_OK != res) {
+					showErrorAndClose("Error creating tracker", res);
+				}
 			}
-	        int errpos[] = new int[1];
-	        FSDK.SetTrackerMultipleParameters(mDraw.mTracker, "ContinuousVideoFeed=true;RecognitionPrecision=0;Threshold=0.997;Threshold2=0.9995;ThresholdFeed=0.97;MemoryLimit=1000;HandleArbitraryRotations=false;DetermineFaceRotationAngle=false;InternalResizeWidth=70;FaceDetectionThreshold=5;", errpos);
-	        if (errpos[0] != 0) {
-	        	showErrorAndClose("Error setting tracker parameters, position", errpos[0]);
-	        }
-	        			
-	        setContentView(mPreview); //creates CameraActivity contents
+			int errpos[] = new int[1];
+			FSDK.SetTrackerMultipleParameters(mDraw.mTracker, "ContinuousVideoFeed=true;RecognitionPrecision=0;Threshold=0.997;Threshold2=0.9995;ThresholdFeed=0.97;MemoryLimit=1000;HandleArbitraryRotations=false;DetermineFaceRotationAngle=false;InternalResizeWidth=70;FaceDetectionThreshold=5;", errpos);
+			if (errpos[0] != 0) {
+				showErrorAndClose("Error setting tracker parameters, position", errpos[0]);
+			}
+
+			setContentView(mPreview); //creates CameraActivity contents
 			addContentView(mDraw, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
 			// Menu
-			LayoutInflater inflater = (LayoutInflater)this.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
-			View buttons = inflater.inflate(R.layout.bottom_menu, null );
+			LayoutInflater inflater = (LayoutInflater) this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			View buttons = inflater.inflate(R.layout.bottom_menu, null);
 			buttons.findViewById(R.id.helpButton).setOnClickListener(this);
-			buttons.findViewById(R.id.clearButton).setOnClickListener(this);			
+			buttons.findViewById(R.id.clearButton).setOnClickListener(this);
 			addContentView(buttons, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-			
-		}                
+
+		}
 	}
 
 	@Override
@@ -153,6 +168,7 @@ public class CameraActivity extends Activity implements OnClickListener {
 		mDraw.mStopped = 0;
 		mDraw.mStopping = 0;
 	}
+
 }
 
 

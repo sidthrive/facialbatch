@@ -71,3 +71,4 @@ tmp/
 project.properties
 .settings
 build/
+/luxand-fr/src/main/assets/config.properties
