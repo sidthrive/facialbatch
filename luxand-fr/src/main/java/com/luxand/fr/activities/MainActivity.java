@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -24,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.luxand.FSDK;
+import com.luxand.fr.ui.FaceImageView;
 import com.luxand.fr.ui.ProcessImageAndDrawResults;
 import com.luxand.fr.util.Config;
 import com.luxand.fr.util.Dialog;
@@ -77,6 +79,7 @@ public class MainActivity extends Activity {
     private FSDK.HTracker mTracker;
 
     Config config = new Config();
+    private HImage oldpicture;
 
     protected void onCreate(Bundle savedInstanceBundle) {
         processing = true; //prevent user from pushing the button while initializing
@@ -319,9 +322,22 @@ public class MainActivity extends Activity {
             Log.w("setFaceToMatch", "picturePath==null");
             return;
         }
-        ImageView imageView = (ImageView) findViewById(R.id.faceToMatch);
-        imageView.setImageURI(Uri.parse(picturePath));
-        this.mDraw.setFaceToMatch(picturePath);
+//        ImageView imageView = (ImageView) findViewById(R.id.faceToMatch);
+//        imageView.setImageURI(Uri.parse(picturePath));
+//        this.mDraw.setFaceToMatch(picturePath);
+
+//        Uri selectedImage = data.getData();
+//        String[] filePathColumn = { MediaStore.Images.Media.DATA };
+
+//        Cursor cursor = getContentResolver().query(selectedImage, filePathColumn, null, null, null);
+//        cursor.moveToFirst();
+//        int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+//        String picturePath = cursor.getString(columnIndex);
+//        cursor.close();
+
+        TextView tv = (TextView) findViewById(R.id.textView1);
+        tv.setText("processing...");
+        new DetectFaceInBackground().execute(picturePath);
     }
 
 
@@ -573,5 +589,69 @@ public class MainActivity extends Activity {
         }
 
     }
+
+
+    private class DetectFaceInBackground extends AsyncTask<String, Void, String> {
+        protected FSDK_Features features;
+        protected TFacePosition faceCoords;
+        protected String picturePath;
+        protected HImage picture;
+        protected int result;
+
+        @Override
+        protected String doInBackground(String... params) {
+            String log = new String();
+            picturePath = params[0];
+            faceCoords = new TFacePosition();
+            faceCoords.w = 0;
+            picture = new HImage();
+            result = FSDK.LoadImageFromFile(picture, picturePath);
+            if (result == FSDK.FSDKE_OK) {
+                result = FSDK.DetectFace(picture, faceCoords);
+                features = new FSDK_Features();
+                if (result == FSDK.FSDKE_OK) {
+                    result = FSDK.DetectFacialFeaturesInRegion(picture, faceCoords, features);
+                }
+            }
+            processing = false; //long-running code is complete, now user may push the button
+            return log;
+        }
+
+        @Override
+        protected void onPostExecute(String resultstring) {
+            TextView tv = (TextView) findViewById(R.id.textView1);
+
+            if (result != FSDK.FSDKE_OK)
+                return;
+
+            FaceImageView imageView = (FaceImageView) findViewById(R.id.imageView1);
+
+            imageView.setImageBitmap(BitmapFactory.decodeFile(picturePath));
+
+            tv.setText(resultstring);
+
+            imageView.detectedFace = faceCoords;
+
+            if (features.features[0] != null) // if detected
+                imageView.facial_features = features;
+
+            int [] realWidth = new int[1];
+            FSDK.GetImageWidth(picture, realWidth);
+            imageView.faceImageWidthOrig = realWidth[0];
+            imageView.invalidate(); // redraw, marking up faces and features
+
+            if (oldpicture != null)
+                FSDK.FreeImage(oldpicture);
+            oldpicture = picture;
+        }
+
+        @Override
+        protected void onPreExecute() {
+        }
+        @Override
+        protected void onProgressUpdate(Void... values) {
+        }
+    }
+    //end of DetectFaceInBackground class
 
 }
